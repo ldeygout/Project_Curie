@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# # DSF Simulation pour Bumblebee (radpol)
+# # DSF Simulation 
 # 
 # Très fortement inspirée du travail d'Amaury Autric dans https://github.com/aautric/4polarMFM_these/blob/main/simu_PSF_polarMFM.py
 
@@ -76,6 +76,22 @@ def psi_lat(x,y,theta,phi, lambd, n1):
     k = (2*np.pi*n1)/(lambd)
     return np.sin(theta)*(x*np.cos(phi)+y*np.sin(phi))*k
 
+def psi_lat_complet(x,y,theta,phi, lambd, n1, focale_l4):
+    '''
+    input: 
+    x,y : position de l'émetteur dans le plan focal (désaxage)
+    theta, phi : description du champ objet en coordonnées polaires dans la BFP (theta est relié à r et phi est la coordonnée azimuthale)
+    lambd : longueur d'onde en µm
+
+    returns:
+    psi_lat : terme de phase à ajouter sans approximation petits angles 
+    '''
+    lambd = 10**(-3)*lambd
+    k = (2*np.pi*n1)/(lambd)
+    x_complet = focale_l4*np.sin(np.arctan(x/focale_l4))
+    y_complet = focale_l4*np.sin(np.arctan(y/focale_l4))
+    return np.sin(theta)*(x_complet*np.cos(phi)+y_complet*np.sin(phi))*k
+
 #Terme de phase issu d'un décalage axial de l'émetteur au plan focal, défini à partir de l'interface
 def psi_z(theta,z, lambd, n1, n2):
     '''
@@ -140,7 +156,9 @@ def padding_depuis_BFP(r_cut, N, lambd, f_tube, f_obj, mag_obj, mag_total, l_pix
     if Npadding%2==1:
         Npadding=Npadding+1
 
-    return Npadding, ((2*np.pi*(mag_total/mag_obj)*f_tube_pad)/(k*l_pixel*Dx)-N)-Npadding
+    lp_prim = (2*np.pi*(mag_total/mag_obj)*f_tube_pad)/(k*(Npadding+N)*Dx)
+
+    return Npadding, ((2*np.pi*(mag_total/mag_obj)*f_tube_pad)/(k*l_pixel*Dx)-(N+Npadding))/(N+Npadding), lp_prim
 
 def padding_depuis_FOV(r_cut, Ntot, lambd, f_tube, f_obj, mag_obj, mag_total, l_pixel, n1):
     '''
